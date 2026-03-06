@@ -1,0 +1,5 @@
+{
+  "name": "PDF Flipbook Converter",
+  "description": "Convert your PDF files into an interactive flipbook experience directly in your browser.",
+  "requestFramePermissions": []
+}

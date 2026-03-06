@@ -97,7 +97,18 @@ export default function App() {
       }
 
       setPages(loadedPages);
-      setTotalPages(numPages);
+      
+      // If total pages is odd, add a blank page so the book "closes" properly in double mode
+      if (numPages % 2 !== 0) {
+        const lastPage = loadedPages[loadedPages.length - 1];
+        loadedPages.push({
+          url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=', // 1x1 white pixel
+          width: lastPage.width,
+          height: lastPage.height
+        });
+      }
+
+      setTotalPages(loadedPages.length);
       setCurrentPage(0);
     } catch (error) {
       console.error('Error processing PDF:', error);
@@ -126,6 +137,14 @@ export default function App() {
     } else {
       setPageInputValue((currentPage + 1).toString());
     }
+  };
+
+  const nextPage = () => {
+    flipBookRef.current?.pageFlip()?.flipNext();
+  };
+
+  const prevPage = () => {
+    flipBookRef.current?.pageFlip()?.flipPrev();
   };
 
   return (
@@ -231,8 +250,17 @@ export default function App() {
 
               {/* Controls & Info */}
               <div className="flex flex-col items-center gap-4">
-                <div className="flex items-center gap-6 bg-white px-6 py-3 rounded-full shadow-md border border-black/5">
-                  <form onSubmit={handlePageJump} className="flex items-center gap-2 font-mono text-sm">
+                <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-md border border-black/5">
+                  <button 
+                    onClick={prevPage}
+                    disabled={currentPage === 0}
+                    className="p-2 hover:bg-black/5 rounded-full disabled:opacity-20 transition-colors"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  <form onSubmit={handlePageJump} className="flex items-center gap-2 font-mono text-sm border-x border-black/5 px-4">
                     <input
                       type="text"
                       value={pageInputValue}
@@ -243,6 +271,15 @@ export default function App() {
                     <span className="text-black/20">/</span>
                     <span className="text-black/50">{totalPages}</span>
                   </form>
+
+                  <button 
+                    onClick={nextPage}
+                    disabled={currentPage >= totalPages - 1}
+                    className="p-2 hover:bg-black/5 rounded-full disabled:opacity-20 transition-colors"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                 </div>
                 
                 <p className="text-xs text-black/40 uppercase tracking-widest font-medium">

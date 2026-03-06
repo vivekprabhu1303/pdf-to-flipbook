@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import HTMLFlipBook from 'react-pageflip';
-import { Upload, FileText, ChevronLeft, ChevronRight, RotateCcw, Loader2 } from 'lucide-react';
+import { Upload, FileText, ChevronLeft, ChevronRight, RotateCcw, Loader2, ZoomIn, ZoomOut, Maximize, Minimize } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Set up PDF.js worker
@@ -39,7 +39,10 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [pageInputValue, setPageInputValue] = useState('1');
+  const [zoom, setZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const flipBookRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -147,6 +150,27 @@ export default function App() {
     flipBookRef.current?.pageFlip()?.flipPrev();
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const zoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
+  const zoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
+
   return (
     <div className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans selection:bg-black selection:text-white">
       {/* Header */}
@@ -218,9 +242,13 @@ export default function App() {
               key="flipbook"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full max-w-5xl flex flex-col items-center gap-8"
+              className={`w-full flex flex-col items-center gap-8 ${isFullscreen ? 'bg-[#F5F5F0] p-8 overflow-auto h-full' : 'max-w-5xl'}`}
+              ref={containerRef}
             >
-              <div className="relative group w-full flex justify-center">
+              <div 
+                className="relative group w-full flex justify-center transition-transform duration-300 ease-out origin-top"
+                style={{ transform: `scale(${zoom})` }}
+              >
                 {/* @ts-ignore */}
                 <HTMLFlipBook
                   width={550}
@@ -249,8 +277,28 @@ export default function App() {
               </div>
 
               {/* Controls & Info */}
-              <div className="flex flex-col items-center gap-4">
+              <div className={`flex flex-col items-center gap-4 ${isFullscreen ? 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50' : ''}`}>
                 <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-md border border-black/5">
+                  <div className="flex items-center gap-1 pr-4 border-r border-black/5">
+                    <button 
+                      onClick={zoomOut}
+                      className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="text-[10px] font-mono font-bold w-10 text-center">
+                      {Math.round(zoom * 100)}%
+                    </span>
+                    <button 
+                      onClick={zoomIn}
+                      className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   <button 
                     onClick={prevPage}
                     disabled={currentPage === 0}
@@ -279,6 +327,14 @@ export default function App() {
                     title="Next Page"
                   >
                     <ChevronRight className="w-5 h-5" />
+                  </button>
+
+                  <button 
+                    onClick={toggleFullscreen}
+                    className="p-2 hover:bg-black/5 rounded-full transition-colors ml-4 border-l border-black/5 pl-4"
+                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  >
+                    {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                   </button>
                 </div>
                 

@@ -174,23 +174,97 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans selection:bg-black selection:text-white">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-bottom border-black/5 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-black/5 px-6 py-3 flex items-center">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-2 w-1/4">
+          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shrink-0">
             <FileText className="text-white w-5 h-5" />
           </div>
-          <h1 className="font-serif italic text-xl tracking-tight">Flipbook.</h1>
+          <h1 className="font-serif italic text-xl tracking-tight hidden sm:block truncate">Flipbook.</h1>
         </div>
         
-        {pages.length > 0 && (
-          <button 
-            onClick={reset}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 hover:bg-black hover:text-white transition-all duration-300 text-sm font-medium"
-          >
-            <RotateCcw className="w-4 h-4" />
-            New File
-          </button>
-        )}
+        {/* Center: Controls */}
+        <div className="flex-1 flex justify-center items-center gap-2 sm:gap-4">
+          {pages.length > 0 && (
+            <>
+              {/* Zoom Controls */}
+              <div className="hidden md:flex items-center gap-1 bg-black/5 rounded-full px-2 py-1">
+                <button 
+                  onClick={zoomOut}
+                  className="p-1.5 hover:bg-black/10 rounded-full transition-colors"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="text-[10px] font-mono font-bold w-10 text-center">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button 
+                  onClick={zoomIn}
+                  className="p-1.5 hover:bg-black/10 rounded-full transition-colors"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-black/5">
+                <button 
+                  onClick={prevPage}
+                  disabled={currentPage === 0}
+                  className="p-1.5 hover:bg-black/5 rounded-full disabled:opacity-20 transition-colors"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <form onSubmit={handlePageJump} className="flex items-center gap-1 font-mono text-xs border-x border-black/5 px-3">
+                  <input
+                    type="text"
+                    value={pageInputValue}
+                    onChange={(e) => setPageInputValue(e.target.value)}
+                    onBlur={handlePageJump}
+                    className="w-10 bg-black/5 border-none rounded px-1 py-0.5 text-center font-bold focus:ring-1 focus:ring-black outline-none"
+                  />
+                  <span className="text-black/20">/</span>
+                  <span className="text-black/50">{totalPages}</span>
+                </form>
+
+                <button 
+                  onClick={nextPage}
+                  disabled={currentPage >= totalPages - 1}
+                  className="p-1.5 hover:bg-black/5 rounded-full disabled:opacity-20 transition-colors"
+                  title="Next Page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right: Actions */}
+        <div className="w-1/4 flex justify-end items-center gap-2">
+          {pages.length > 0 && (
+            <>
+              <button 
+                onClick={toggleFullscreen}
+                className="p-2 hover:bg-black/5 rounded-full transition-colors hidden sm:flex"
+                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              >
+                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              </button>
+              <button 
+                onClick={reset}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-black/10 hover:bg-black hover:text-white transition-all duration-300 text-xs font-medium shrink-0"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline">New File</span>
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       <main className="pt-24 pb-12 px-6 flex flex-col items-center justify-center min-h-screen">
@@ -277,68 +351,8 @@ export default function App() {
               </div>
 
               {/* Controls & Info */}
-              <div className={`flex flex-col items-center gap-4 ${isFullscreen ? 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50' : ''}`}>
-                <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-md border border-black/5">
-                  <div className="flex items-center gap-1 pr-4 border-r border-black/5">
-                    <button 
-                      onClick={zoomOut}
-                      className="p-2 hover:bg-black/5 rounded-full transition-colors"
-                      title="Zoom Out"
-                    >
-                      <ZoomOut className="w-4 h-4" />
-                    </button>
-                    <span className="text-[10px] font-mono font-bold w-10 text-center">
-                      {Math.round(zoom * 100)}%
-                    </span>
-                    <button 
-                      onClick={zoomIn}
-                      className="p-2 hover:bg-black/5 rounded-full transition-colors"
-                      title="Zoom In"
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <button 
-                    onClick={prevPage}
-                    disabled={currentPage === 0}
-                    className="p-2 hover:bg-black/5 rounded-full disabled:opacity-20 transition-colors"
-                    title="Previous Page"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-
-                  <form onSubmit={handlePageJump} className="flex items-center gap-2 font-mono text-sm border-x border-black/5 px-4">
-                    <input
-                      type="text"
-                      value={pageInputValue}
-                      onChange={(e) => setPageInputValue(e.target.value)}
-                      onBlur={handlePageJump}
-                      className="w-12 bg-black/5 border-none rounded px-2 py-1 text-center font-bold focus:ring-1 focus:ring-black outline-none"
-                    />
-                    <span className="text-black/20">/</span>
-                    <span className="text-black/50">{totalPages}</span>
-                  </form>
-
-                  <button 
-                    onClick={nextPage}
-                    disabled={currentPage >= totalPages - 1}
-                    className="p-2 hover:bg-black/5 rounded-full disabled:opacity-20 transition-colors"
-                    title="Next Page"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-
-                  <button 
-                    onClick={toggleFullscreen}
-                    className="p-2 hover:bg-black/5 rounded-full transition-colors ml-4 border-l border-black/5 pl-4"
-                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                  >
-                    {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                  </button>
-                </div>
-                
-                <p className="text-xs text-black/40 uppercase tracking-widest font-medium">
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-[10px] text-black/40 uppercase tracking-widest font-medium">
                   Click or drag corners to flip pages
                 </p>
               </div>

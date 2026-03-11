@@ -172,7 +172,7 @@ export default function App() {
   const zoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans selection:bg-black selection:text-white">
+    <div ref={containerRef} className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans selection:bg-black selection:text-white">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-black/5 px-6 py-3 flex items-center">
         {/* Left: Logo */}
@@ -240,34 +240,36 @@ export default function App() {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Actions moved to center */}
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={toggleFullscreen}
+                  className="flex items-center gap-2 px-3 py-1.5 hover:bg-black/5 rounded-full transition-colors text-xs font-medium"
+                  title={isFullscreen ? "Exit Fullscreen Mode" : "Enter Fullscreen Mode"}
+                >
+                  {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{isFullscreen ? "Exit Full Screen Mode" : "Full Screen Mode"}</span>
+                </button>
+                <button 
+                  onClick={reset}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-black/10 hover:bg-black hover:text-white transition-all duration-300 text-xs font-medium shrink-0"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>New File</span>
+                </button>
+              </div>
             </>
           )}
         </div>
 
-        {/* Right: Actions */}
+        {/* Right: Actions (Empty or minimal) */}
         <div className="w-1/4 flex justify-end items-center gap-2">
-          {pages.length > 0 && (
-            <>
-              <button 
-                onClick={toggleFullscreen}
-                className="p-2 hover:bg-black/5 rounded-full transition-colors hidden sm:flex"
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              >
-                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-              </button>
-              <button 
-                onClick={reset}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-black/10 hover:bg-black hover:text-white transition-all duration-300 text-xs font-medium shrink-0"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">New File</span>
-              </button>
-            </>
-          )}
+          {/* Right side is now mostly empty as controls moved to center */}
         </div>
       </header>
 
-      <main className="pt-24 pb-12 px-6 flex flex-col items-center justify-center min-h-screen">
+      <main className={`flex flex-col items-center w-full ${isFullscreen ? 'h-[calc(100vh-56px)] mt-[56px] overflow-hidden' : `min-h-screen pt-24 pb-12 px-6 ${pages.length === 0 ? 'justify-center' : 'justify-start'}`}`}>
         <AnimatePresence mode="wait">
           {pages.length === 0 ? (
             <motion.div 
@@ -275,7 +277,7 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl"
+              className="w-full max-w-xl px-6"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -316,46 +318,69 @@ export default function App() {
               key="flipbook"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className={`w-full flex flex-col items-center gap-8 ${isFullscreen ? 'bg-[#F5F5F0] p-8 overflow-auto h-full' : 'max-w-5xl'}`}
-              ref={containerRef}
+              className={`w-full flex flex-col items-center ${isFullscreen ? 'h-full' : 'max-w-screen-2xl'}`}
             >
               <div 
-                className="relative group w-full flex justify-center transition-transform duration-300 ease-out origin-top"
-                style={{ transform: `scale(${zoom})` }}
+                className={`w-full flex items-center justify-center ${isFullscreen ? 'flex-1 overflow-auto p-4 sm:p-8 custom-scrollbar' : 'py-8 sm:py-12'}`}
               >
-                {/* @ts-ignore */}
-                <HTMLFlipBook
-                  width={550}
-                  height={733}
-                  size="stretch"
-                  minWidth={275}
-                  maxWidth={1100}
-                  minHeight={400}
-                  maxHeight={1533}
-                  maxShadowOpacity={0.5}
-                  showCover={true}
-                  mobileScrollSupport={true}
-                  onFlip={onFlip}
-                  className="shadow-2xl shadow-black/20"
-                  ref={flipBookRef}
-                  useMouseEvents={true}
-                  clickEventForward={true}
-                  display="double"
-                  flippingTime={1000}
-                  drawShadow={true}
+                {/* Scaled Wrapper: This div takes up the actual space of the scaled content */}
+                <div 
+                  style={{ 
+                    width: 1100 * zoom, // 550 * 2
+                    height: 733 * zoom,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}
                 >
-                  {pages.map((page, index) => (
-                    <Page key={index} url={page.url} number={index + 1} />
-                  ))}
-                </HTMLFlipBook>
+                  <div 
+                    className="transition-transform duration-300 ease-out shadow-2xl shadow-black/20"
+                    style={{ 
+                      transform: `scale(${zoom})`,
+                      transformOrigin: 'center center',
+                      width: 1100,
+                      height: 733,
+                      position: 'absolute'
+                    }}
+                  >
+                    {/* @ts-ignore */}
+                    <HTMLFlipBook
+                      width={550}
+                      height={733}
+                      size="fixed"
+                      minWidth={275}
+                      maxWidth={1100}
+                      minHeight={400}
+                      maxHeight={1533}
+                      maxShadowOpacity={0.5}
+                      showCover={true}
+                      mobileScrollSupport={true}
+                      onFlip={onFlip}
+                      className=""
+                      ref={flipBookRef}
+                      useMouseEvents={true}
+                      clickEventForward={true}
+                      display="double"
+                      flippingTime={1000}
+                      drawShadow={true}
+                    >
+                      {pages.map((page, index) => (
+                        <Page key={index} url={page.url} number={index + 1} />
+                      ))}
+                    </HTMLFlipBook>
+                  </div>
+                </div>
               </div>
 
-              {/* Controls & Info */}
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-[10px] text-black/40 uppercase tracking-widest font-medium">
-                  Click or drag corners to flip pages
-                </p>
-              </div>
+              {/* Controls Info */}
+              {!isFullscreen && (
+                <div className="flex flex-col items-center gap-2 pb-8">
+                  <p className="text-[10px] text-black/40 uppercase tracking-widest font-medium">
+                    Click or drag corners to flip pages
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
